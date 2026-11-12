@@ -1,0 +1,22 @@
+name: keepalive
+
+on:
+  schedule:
+    # 每 14 天在仓库留一次空提交，防止 GitHub 停用定时工作流
+    - cron: '0 3 1,15 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 空提交保活
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive $(date -u +%F)"
+          git push
