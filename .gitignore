@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.checkin.log
+sakurafrp/checkin.log
+sakurafrp/error_screenshot.png
+sakurafrp/error_page_source.html
+secrets.env
+pat.txt
+.venv/

@@ -1,0 +1,92 @@
+# 这是「修复版」的 SakuraFrp 签到 workflow，用来替换原仓库
+# Misaki-low/SakuraFrpQiandao 的 .github/workflows/sakurafrp_sign.yml
+#
+# 修复点只有一个：cron 从单一时点改成两个时点。
+# 原因：fork 仓库的定时任务在 GitHub 上优先级低，经常延迟几小时甚至跳过
+# （11-11、11-12 早上都跳过了，今天 15:58 才补跑）。
+# 脚本本身幂等，已签到会直接返回成功，所以多跑一次没有副作用。
+name: SakuraFrp 自动签到
+
+on:
+  schedule:
+    # 每天北京时间 09:00（UTC 01:00）
+    - cron: '0 1 * * *'
+    # 补一次：每天北京时间 11:00（UTC 03:00），错过 09:00 时兜底
+    - cron: '0 3 * * *'
+
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 安装 Python 依赖
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install-deps chromium
+
+      - name: 运行签到脚本
+        env:
+          SAKURAFRP_USER: ${{ secrets.SAKURAFRP_USER }}
+          SAKURAFRP_PASS: ${{ secrets.SAKURAFRP_PASS }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          MODEL: ${{ secrets.MODEL }}
+          MODEL_FALLBACK: ${{ secrets.MODEL_FALLBACK }}
+          IMAGE_AS_BASE64: ${{ secrets.IMAGE_AS_BASE64 || 'false' }}
+          CI: 'true'
+          HEADLESS: 'true'
+        run: |
+          python main.py
+
+      # 第一次失败（常见原因：验证码识别偏差、免费模型 429 限流）时再跑一遍。
+      - name: 失败后重试一次
+        if: failure()
+        env:
+          SAKURAFRP_USER: ${{ secrets.SAKURAFRP_USER }}
+          SAKURAFRP_PASS: ${{ secrets.SAKURAFRP_PASS }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          MODEL: ${{ secrets.MODEL }}
+          MODEL_FALLBACK: ${{ secrets.MODEL_FALLBACK }}
+          IMAGE_AS_BASE64: ${{ secrets.IMAGE_AS_BASE64 || 'false' }}
+          CI: 'true'
+          HEADLESS: 'true'
+        run: |
+          echo "上次执行未成功，等待 90 秒后重试..."
+          sleep 90
+          python main.py
+
+      - name: 发送邮件通知
+        if: always()
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL || secrets.EMAIL_USERNAME }}
+        run: |
+          python send_email.py
+
+      - name: 上传日志
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkin-logs
+          path: |
+            checkin.log
+            error_screenshot.png
+            error_page_source.html
+          retention-days: 7
