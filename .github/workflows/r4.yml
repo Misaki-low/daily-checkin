@@ -1,0 +1,20 @@
+name: r4
+on:
+  workflow_dispatch:
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 设置
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - name: 跑
+        working-directory: rainyun
+        env:
+          RAINYUN_COOKIES: ${{ secrets.RAINYUN_COOKIES }}
+        run: |
+          echo ok
+          python main.py
