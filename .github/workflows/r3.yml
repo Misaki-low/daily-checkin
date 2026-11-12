@@ -1,0 +1,10 @@
+name: r3
+on:
+  schedule:
+    - cron: '5 1 * * *'
+  workflow_dispatch:
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hi
