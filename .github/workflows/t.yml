@@ -1,0 +1,4 @@
+name: t
+on: workflow_dispatch
+jobs:/n  a:/n    runs-on: ubuntu-latest
+    steps:/n      - run: echo hi
