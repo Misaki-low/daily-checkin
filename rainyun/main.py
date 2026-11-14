@@ -17,6 +17,7 @@ import random
 import re
 import sys
 import time
+import traceback
 
 import requests
 from playwright.sync_api import sync_playwright
@@ -135,7 +136,7 @@ def run() -> int:
 
         for attempt in range(1, MAX_TRY + 1):
             log(f"—— 第 {attempt}/{MAX_TRY} 轮 ——")
-            btn = page.locator("text=领取奖励").first()
+            btn = page.locator("text=领取奖励").first
             if btn.count() == 0:
                 log("页面没有「领取奖励」，状态:", status_of(cookies))
                 break
@@ -148,7 +149,7 @@ def run() -> int:
                 continue
             time.sleep(random.uniform(2.5, 4))
 
-            ifr = page.locator('iframe[src*="turing.captcha"], iframe[src*="captcha"]').first()
+            ifr = page.locator('iframe[src*="turing.captcha"], iframe[src*="captcha"]').first
             if ifr.count() == 0:
                 log("没出现验证码，直接校验状态")
                 time.sleep(3)
@@ -171,7 +172,7 @@ def run() -> int:
                 continue
             log("模型结果:", res)
 
-            frame = page.frame_locator('iframe[src*="turing.captcha"], iframe[src*="captcha"]').first()
+            frame = page.frame_locator('iframe[src*="turing.captcha"], iframe[src*="captcha"]')
             for (nx, ny) in res["points"]:
                 cx = box["x"] + nx / 1000 * box["width"]
                 cy = box["y"] + ny / 1000 * box["height"]
@@ -184,7 +185,7 @@ def run() -> int:
             time.sleep(random.uniform(1.2, 1.8))
             # 点「确定」：优先 iframe 内按钮，失败按坐标兜底
             try:
-                ok = frame.locator("text=确定").first()
+                ok = frame.locator("text=确定").first
                 if ok.count() and ok.is_visible():
                     ok.click(timeout=5000)
                     log("已点确定")
@@ -213,4 +214,5 @@ if __name__ == "__main__":
         sys.exit(run())
     except Exception as e:
         log("ERROR", e)
+        log(traceback.format_exc())
         sys.exit(1)
