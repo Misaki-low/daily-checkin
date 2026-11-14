@@ -139,6 +139,23 @@ def run() -> int:
             btn = page.locator("text=领取奖励").first
             if btn.count() == 0:
                 log("页面没有「领取奖励」，状态:", status_of(cookies))
+                log("URL:", page.url, "| TITLE:", page.title())
+                try:
+                    btns = page.locator("button").all_inner_texts()
+                    log("页面按钮:", [b.strip()[:12] for b in btns if b.strip()][:20])
+                except Exception as e:
+                    log("按钮枚举失败:", e)
+                try:
+                    txt = page.locator("body").inner_text()[:600].replace("\n", " | ")
+                    log("正文片段:", txt)
+                except Exception as e:
+                    log("正文读取失败:", e)
+                try:
+                    os.makedirs("artifacts", exist_ok=True)
+                    page.screenshot(path="artifacts/page.png", full_page=True)
+                    log("截图已存 artifacts/page.png")
+                except Exception as e:
+                    log("截图失败:", e)
                 break
             try:
                 btn.click(timeout=15000)
