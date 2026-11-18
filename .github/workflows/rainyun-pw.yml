@@ -1,0 +1,53 @@
+name: 雨云每日签到（OpenCV 版）
+
+on:
+  schedule:
+    # 每天北京时间 09:10（UTC 01:10）
+    - cron: '10 1 * * *'
+    # 兜底：北京 11:10（UTC 03:10），已签到会直接退出
+    - cron: '10 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: rainyun/pw/package-lock.json
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        working-directory: rainyun/pw
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          python -m pip install --upgrade pip
+          python -m pip install opencv-python-headless numpy
+
+      - name: 执行签到
+        working-directory: rainyun/pw
+        env:
+          RAINYUN_COOKIES: ${{ secrets.RAINYUN_COOKIES }}
+          MAX_TRY: '5'
+        run: node auto.js
+
+      - name: 保存截图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rainyun-artifacts
+          path: rainyun/pw/artifacts
+          if-no-files-found: ignore
+          retention-days: 7

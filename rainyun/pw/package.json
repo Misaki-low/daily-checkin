@@ -1,0 +1,10 @@
+{
+  "name": "rainyun-pw-checkin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "雨云每日签到（Playwright + OpenCV 点选验证码）",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.65.1"
+  }
+}
